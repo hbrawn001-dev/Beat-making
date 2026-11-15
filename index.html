@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#222942">
+<title>Beat Maker</title>
+<style>
+:root{
+  --bg:#dde2ea;--panel:#eef1f6;--text:#1c2232;--muted:#5d6680;--pad:#c9d0de;--padb:#b9c2d4;--ring:#1c2232;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#171c2b;--panel:#222942;--text:#eaeefa;--muted:#9aa4c4;--pad:#323b5a;--padb:#3b4566;--ring:#eaeefa;color-scheme:dark}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{margin:0 auto;max-width:560px;background:var(--bg);color:var(--text);font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+h1{font-size:20px;margin:0 0 12px;font-weight:800}
+.panel{background:var(--panel);padding:12px 12px 10px}
+.sliders{display:-webkit-flex;display:flex;margin-bottom:10px}
+.sl{-webkit-flex:1;flex:1;font-size:12px;color:var(--muted);font-weight:600;margin-right:12px}
+.sl:last-child{margin-right:0}
+.sl b{color:var(--text)}
+.sl input{width:100%;margin:6px 0 0}
+.selects{display:-webkit-flex;display:flex;margin-bottom:10px}
+.sel{-webkit-flex:1;flex:1;font-size:12px;color:var(--muted);font-weight:600;margin-right:12px}
+.sel:last-child{margin-right:0}
+.sel select{display:block;width:100%;margin-top:4px;font:inherit;font-size:15px;font-weight:600;padding:9px 8px;border:0;border-radius:8px;background:var(--pad);color:var(--text)}
+.label-line{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:4px}
+.amb{display:-webkit-flex;display:flex;margin-bottom:10px}
+.tg{-webkit-flex:1;flex:1;font:inherit;font-size:13px;font-weight:700;border:0;border-radius:8px;padding:10px 4px;margin-right:6px;background:var(--pad);color:var(--text);cursor:pointer;touch-action:manipulation}
+.tg:last-child{margin-right:0}
+.tg.on{background:#4cc9f0;color:#06222b}
+.tools{display:-webkit-flex;display:flex}
+.btn{font:inherit;font-weight:700;font-size:15px;border:0;border-radius:10px;padding:11px 14px;background:var(--pad);color:var(--text);cursor:pointer;touch-action:manipulation}
+.tools .btn{-webkit-flex:1;flex:1;margin-right:8px}
+.tools .btn:last-child{margin-right:0}
+.bar{position:-webkit-sticky;position:sticky;top:0;z-index:5;background:var(--panel);padding:8px 12px 6px;box-shadow:0 2px 0 rgba(0,0,0,.1)}
+.btn.play{display:block;width:100%;background:#2ec4b6;color:#06231f;margin-bottom:8px}
+.btn.play.on{background:#ff6b57;color:#2a0905}
+.heads,.row{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center}
+.lab{width:20px;-webkit-flex:none;flex:none;text-align:center;font-size:12px;font-weight:800;color:var(--muted)}
+.th{-webkit-flex:1;flex:1;min-width:0;text-align:center;margin-left:4px}
+.th .nm{display:block;width:100%;font:inherit;font-size:10px;font-weight:800;border:0;border-radius:7px;padding:7px 0;color:#14181f;cursor:pointer;touch-action:manipulation}
+.th .mu{display:block;width:100%;margin-top:2px;font:inherit;font-size:10px;font-weight:700;border:0;background:none;color:var(--muted);padding:3px 0;cursor:pointer}
+.th.muted .nm{opacity:.35}
+.th.muted .mu{color:var(--text);text-decoration:underline}
+.grid{padding:10px 12px 20px}
+.row{margin-top:5px}
+.row.g{margin-top:12px}
+.row:first-child{margin-top:0}
+.pad{-webkit-flex:1;flex:1;min-width:0;height:36px;margin-left:4px;border:0;border-radius:7px;background:var(--pad);color:#14181f;font:inherit;font-size:9px;font-weight:800;cursor:pointer;touch-action:manipulation;padding:0}
+.pad.b{background:var(--padb)}
+.pad.on{background:var(--c)}
+.row.now .pad{box-shadow:0 0 0 2px var(--ring)}
+.row.now .lab{color:var(--text)}
+.hint{padding:0 14px 28px;margin:0;font-size:13px;color:var(--muted);line-height:1.5}
+@media (prefers-reduced-motion: reduce){*{-webkit-transition:none!important;transition:none!important}}
+
+</style>
+</head>
+<body>
+<header class="panel">
+  <h1>Beat Maker</h1>
+  <div class="sliders">
+    <label class="sl">Tempo <b id="bpmv">90</b> BPM<input id="bpm" type="range" min="60" max="180" value="90"></label>
+    <label class="sl">Swing <b id="swv">0</b> %<input id="sw" type="range" min="0" max="50" value="0"></label>
+    <label class="sl">Volume<input id="vol" type="range" min="0" max="100" value="80"></label>
+  </div>
+  <div class="selects">
+    <label class="sel">Tonalité<select id="root"></select></label>
+    <label class="sel">Accords<select id="prog"></select></label>
+  </div>
+  <div class="label-line">Ambiance</div>
+  <div class="amb">
+    <button class="tg" id="tg-pad" type="button">Nappe d’accords</button>
+    <button class="tg" id="tg-vinyl" type="button">Vinyle</button>
+    <button class="tg" id="tg-rain" type="button">Pluie</button>
+  </div>
+  <div class="tools">
+    <button class="btn" id="demo" type="button">Exemple</button>
+    <button class="btn" id="clear" type="button">Tout vider</button>
+  </div>
+</header>
+
+<div class="bar">
+  <button class="btn play" id="play" type="button">Lecture</button>
+  <div class="heads" id="heads"><div class="lab"></div></div>
+</div>
+
+<main class="grid" id="grid"></main>
+
+<p class="hint">Touchez une case pour poser un son sur ce temps. Sur Basse et Mélo, chaque touche change la note (cinq notes de la gamme choisie). Touchez le nom d’une piste pour l’écouter, « Muet » pour la couper. Votre beat est enregistré automatiquement sur cet appareil.</p>
+
+<script>
+(function () {
+  "use strict";
+  var NAMES = ["Kick", "Caisse", "Charley", "Ouvert", "Clap", "Tom", "Basse", "Mélo"];
+  var COLORS = ["#ff6b57", "#ffb020", "#2ec4b6", "#4cc9f0", "#b388ff", "#8bd450", "#ff8fab", "#f2e55c"];
+  var NN = ["Do", "Do#", "Ré", "Ré#", "Mi", "Fa", "Fa#", "Sol", "Sol#", "La", "La#", "Si"];
+  var DEG = [0, 3, 5, 7, 10];
+  var TYPES = [[0, 3, 7, 10], [0, 4, 7, 11], [0, 4, 7, 10]];
+  var PROGS = [
+    { name: "Mélancolique", r: [0, 8, 3, 10], t: [0, 1, 1, 2] },
+    { name: "Nocturne", r: [0, 5, 8, 7], t: [0, 0, 1, 2] },
+    { name: "Doux", r: [0, 3, 5, 10], t: [0, 1, 0, 2] }
+  ];
+  var STEPS = 16, T = 8, DRUMS = 6, KEY = "beatmaker.v1";
+
+  var pattern = [], mute = [], pads = [], rows = [];
+  var bpm = 90, swing = 0, vol = 80, root = 9, prog = 0;
+  var amb = { pad: false, vinyl: false, rain: false };
+  var playing = false, step = 0, bar = 0, nextTime = 0, timer = null, raf = null, queue = [], lastRow = -1;
+  var ctx = null, master, noiseBuf, revIn, dlyIn, gHiss, gRain;
+
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls) { var e = document.createElement(tag); if (cls) e.className = cls; return e; }
+
+  /* ---------- Sauvegarde ---------- */
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ p: pattern, m: mute, bpm: bpm, sw: swing, vol: vol, root: root, prog: prog, amb: amb }));
+    } catch (e) {}
+  }
+  function load() {
+    try {
+      var s = JSON.parse(localStorage.getItem(KEY));
+      if (!s || !s.p || s.p.length !== T || s.p[0].length !== STEPS) return;
+      pattern = s.p; mute = s.m || mute;
+      bpm = s.bpm || bpm; swing = s.sw || 0; vol = s.vol == null ? vol : s.vol;
+      root = s.root == null ? root : s.root; prog = s.prog || 0;
+      if (s.amb) amb = { pad: !!s.amb.pad, vinyl: !!s.amb.vinyl, rain: !!s.amb.rain };
+    } catch (e) {}
+  }
+
+  /* ---------- Audio ---------- */
+  function initAudio() {
+    if (!ctx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) { alert("Ce navigateur ne prend pas en charge l’audio."); return false; }
+      ctx = new AC();
+      var sr = ctx.sampleRate, i, c, ch;
+      master = ctx.createGain();
+      var comp = ctx.createDynamicsCompressor();
+      master.connect(comp); comp.connect(ctx.destination);
+      noiseBuf = ctx.createBuffer(1, sr * 2, sr);
+      ch = noiseBuf.getChannelData(0);
+      for (i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+      /* réverbération */
+      var len = Math.floor(sr * 2.2), imp = ctx.createBuffer(2, len, sr);
+      for (c = 0; c < 2; c++) {
+        ch = imp.getChannelData(c);
+        for (i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.5);
+      }
+      var conv = ctx.createConvolver(); conv.buffer = imp;
+      revIn = ctx.createGain(); revIn.connect(conv);
+      var rg = ctx.createGain(); rg.gain.value = 0.5; conv.connect(rg); rg.connect(master);
+      /* écho */
+      dlyIn = ctx.createDelay(2); dlyIn.delayTime.value = 0.4;
+      var fb = ctx.createGain(); fb.gain.value = 0.35;
+      dlyIn.connect(fb); fb.connect(dlyIn);
+      var dOut = ctx.createGain(); dOut.gain.value = 0.3;
+      dlyIn.connect(dOut); dOut.connect(master); dOut.connect(revIn);
+      /* bruits continus : grésillement et pluie */
+      gHiss = loopNoise(3000, 9000);
+      gRain = loopNoise(1200, 6500);
+    }
+    if (ctx.state === "suspended" && ctx.resume) ctx.resume();
+    master.gain.value = vol / 100;
+    applyAmb();
+    return true;
+  }
+  function loopNoise(hp, lp) {
+    var s = ctx.createBufferSource(); s.buffer = noiseBuf; s.loop = true;
+    var a = ctx.createBiquadFilter(); a.type = "highpass"; a.frequency.value = hp;
+    var b = ctx.createBiquadFilter(); b.type = "lowpass"; b.frequency.value = lp;
+    var g = ctx.createGain(); g.gain.value = 0;
+    s.connect(a); a.connect(b); b.connect(g); g.connect(master);
+    s.start(0);
+    return g;
+  }
+  function applyAmb() {
+    if (!ctx) return;
+    gHiss.gain.setTargetAtTime(amb.vinyl ? 0.03 : 0, ctx.currentTime, 0.2);
+    gRain.gain.setTargetAtTime(amb.rain ? 0.09 : 0, ctx.currentTime, 0.3);
+  }
+  function route(n, rev, dl) {
+    n.connect(master);
+    if (rev) { var a = ctx.createGain(); a.gain.value = rev; n.connect(a); a.connect(revIn); }
+    if (dl) { var b = ctx.createGain(); b.gain.value = dl; n.connect(b); b.connect(dlyIn); }
+  }
+  function env(t, peak, dur, rev) {
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(peak, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    route(g, rev || 0, 0);
+    return g;
+  }
+  function noise(t, dur, off) {
+    var s = ctx.createBufferSource(); s.buffer = noiseBuf;
+    s.start(t, off || 0); s.stop(t + dur);
+    return s;
+  }
+  function freq(semi, oct) { return 440 * Math.pow(2, ((12 * (oct + 1) + semi) - 69) / 12); }
+
+  function kick(t) {
+    var o = ctx.createOscillator(); o.type = "sine";
+    o.frequency.setValueAtTime(160, t);
+    o.frequency.exponentialRampToValueAtTime(42, t + 0.12);
+    o.connect(env(t, 1, 0.45)); o.start(t); o.stop(t + 0.5);
+  }
+  function snare(t) {
+    var f = ctx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 1000;
+    noise(t, 0.2).connect(f); f.connect(env(t, 0.7, 0.18, 0.25));
+    var o = ctx.createOscillator(); o.type = "triangle"; o.frequency.value = 190;
+    o.connect(env(t, 0.5, 0.12)); o.start(t); o.stop(t + 0.15);
+  }
+  function hat(t, dur) {
+    var f = ctx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 7500;
+    noise(t, dur).connect(f); f.connect(env(t, 0.4, dur));
+  }
+  function clap(t) {
+    var f = ctx.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 1800; f.Q.value = 1;
+    var g = ctx.createGain(); route(g, 0.3, 0);
+    g.gain.setValueAtTime(0.0001, t);
+    for (var k = 0; k < 3; k++) {
+      g.gain.setValueAtTime(0.8, t + k * 0.012);
+      g.gain.exponentialRampToValueAtTime(0.1, t + k * 0.012 + 0.01);
+    }
+    g.gain.setValueAtTime(0.8, t + 0.036);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+    noise(t, 0.25).connect(f); f.connect(g);
+  }
+  function tom(t) {
+    var o = ctx.createOscillator(); o.type = "sine";
+    o.frequency.setValueAtTime(210, t);
+    o.frequency.exponentialRampToValueAtTime(110, t + 0.2);
+    o.connect(env(t, 0.8, 0.35, 0.1)); o.start(t); o.stop(t + 0.4);
+  }
+  function bass(t, v) {
+    var f = freq(root + DEG[v - 1], 2);
+    var o = ctx.createOscillator(); o.type = "sawtooth"; o.frequency.value = f;
+    var lp = ctx.createBiquadFilter(); lp.type = "lowpass";
+    lp.frequency.setValueAtTime(900, t); lp.frequency.exponentialRampToValueAtTime(180, t + 0.25);
+    o.connect(lp); lp.connect(env(t, 0.45, 0.4));
+    var s = ctx.createOscillator(); s.type = "sine"; s.frequency.value = f;
+    s.connect(env(t, 0.6, 0.4));
+    o.start(t); o.stop(t + 0.45); s.start(t); s.stop(t + 0.45);
+  }
+  function lead(t, v) {
+    var o = ctx.createOscillator(); o.type = "triangle"; o.frequency.value = freq(root + DEG[v - 1], 4);
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.35, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+    o.connect(g); route(g, 0.35, 0.5);
+    o.start(t); o.stop(t + 0.65);
+  }
+  function chord(t, n) {
+    var p = PROGS[prog], i = n % 4, iv = TYPES[p.t[i]], len = 16 * stepDur();
+    var lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1100; lp.Q.value = 0.5;
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.1, t + len * 0.25);
+    g.gain.linearRampToValueAtTime(0.1, t + len * 0.85);
+    g.gain.linearRampToValueAtTime(0.0001, t + len + 0.8);
+    lp.connect(g); route(g, 0.6, 0);
+    for (var k = 0; k < iv.length; k++) {
+      for (var d = -1; d <= 1; d += 2) {
+        var o = ctx.createOscillator(); o.type = "sawtooth";
+        o.frequency.value = freq(root + p.r[i] + iv[k], 3);
+        o.detune.value = d * 7;
+        o.connect(lp); o.start(t); o.stop(t + len + 0.9);
+      }
+    }
+  }
+  function click(t) {
+    var f = ctx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 2500;
+    var g = ctx.createGain(); g.gain.value = 0.05 + Math.random() * 0.2;
+    noise(t, 0.004, Math.random() * 1.5).connect(f); f.connect(g); g.connect(master);
+  }
+  var voices = [kick, snare, function (t) { hat(t, 0.05); }, function (t) { hat(t, 0.28); }, clap, tom, bass, lead];
+
+  /* ---------- Séquenceur ---------- */
+  function stepDur() { return 60 / bpm / 4; }
+  function tick() {
+    dlyIn.delayTime.value = Math.min(1.9, stepDur() * 3);
+    while (nextTime < ctx.currentTime + 0.12) {
+      var t = nextTime + (step % 2 === 1 ? (swing / 100) * stepDur() : 0);
+      if (step === 0 && amb.pad) chord(t, bar);
+      for (var i = 0; i < T; i++) {
+        var v = pattern[i][step];
+        if (v && !mute[i]) voices[i](t, v);
+      }
+      if (amb.vinyl) {
+        var n = Math.floor(Math.random() * 3);
+        for (var c = 0; c < n; c++) click(t + Math.random() * stepDur());
+      }
+      queue.push({ n: step, t: t });
+      nextTime += stepDur();
+      step = (step + 1) % STEPS;
+      if (step === 0) bar++;
+    }
+  }
+  function setRow(n) {
+    if (lastRow === n) return;
+    if (lastRow >= 0) rows[lastRow].className = rows[lastRow].className.replace(" now", "");
+    if (n >= 0) rows[n].className += " now";
+    lastRow = n;
+  }
+  function draw() {
+    if (!playing) return;
+    while (queue.length && queue[0].t <= ctx.currentTime) setRow(queue.shift().n);
+    raf = requestAnimationFrame(draw);
+  }
+  function start() {
+    if (!initAudio()) return;
+    playing = true; step = 0; bar = 0; queue = [];
+    nextTime = ctx.currentTime + 0.06;
+    tick();
+    timer = setInterval(tick, 25);
+    raf = requestAnimationFrame(draw);
+    playBtn.className = "btn play on"; playBtn.textContent = "Arrêter";
+  }
+  function stop() {
+    playing = false;
+    clearInterval(timer); cancelAnimationFrame(raf);
+    queue = []; setRow(-1);
+    playBtn.className = "btn play"; playBtn.textContent = "Lecture";
+  }
+
+  /* ---------- Interface ---------- */
+  var playBtn = $("play");
+  var i, n, k;
+  for (k = 0; k < T; k++) {
+    pattern[k] = []; mute[k] = false;
+    for (n = 0; n < STEPS; n++) pattern[k][n] = 0;
+  }
+  load();
+
+  function paint(k, n) {
+    var p = pads[n][k], v = pattern[k][n];
+    p.className = "pad" + (((n >> 2) % 2) ? " b" : "") + (v ? " on" : "");
+    p.textContent = (k >= DRUMS && v) ? NN[(root + DEG[v - 1]) % 12] : "";
+  }
+  function repaint() { for (var a = 0; a < T; a++) for (var b = 0; b < STEPS; b++) paint(a, b); }
+  function preview(k, v) {
+    if (!initAudio()) return;
+    voices[k](ctx.currentTime + 0.01, v || 1);
+  }
+
+  var headsEl = $("heads"), gridEl = $("grid"), ths = [];
+  for (k = 0; k < T; k++) {
+    (function (k) {
+      var th = el("div", "th" + (mute[k] ? " muted" : ""));
+      var nm = el("button", "nm"); nm.type = "button"; nm.textContent = NAMES[k]; nm.style.background = COLORS[k];
+      var mu = el("button", "mu"); mu.type = "button"; mu.textContent = "Muet";
+      nm.onclick = function () { preview(k, 1); };
+      mu.onclick = function () { mute[k] = !mute[k]; th.className = "th" + (mute[k] ? " muted" : ""); save(); };
+      th.appendChild(nm); th.appendChild(mu); headsEl.appendChild(th); ths[k] = th;
+    })(k);
+  }
+  for (n = 0; n < STEPS; n++) {
+    (function (n) {
+      var row = el("div", "row" + (n > 0 && n % 4 === 0 ? " g" : ""));
+      var lab = el("div", "lab"); lab.textContent = n % 4 === 0 ? String(n / 4 + 1) : "";
+      row.appendChild(lab);
+      pads[n] = [];
+      for (var k = 0; k < T; k++) {
+        (function (k) {
+          var p = el("button", "pad"); p.type = "button";
+          p.style.setProperty("--c", COLORS[k]);
+          p.setAttribute("aria-label", NAMES[k] + ", pas " + (n + 1));
+          p.onclick = function () {
+            pattern[k][n] = k >= DRUMS ? (pattern[k][n] + 1) % (DEG.length + 1) : (pattern[k][n] ? 0 : 1);
+            paint(k, n); save();
+            if (pattern[k][n] && !playing) preview(k, pattern[k][n]);
+          };
+          pads[n][k] = p; row.appendChild(p);
+        })(k);
+      }
+      rows[n] = row; gridEl.appendChild(row);
+    })(n);
+  }
+
+  var rootSel = $("root"), progSel = $("prog");
+  for (i = 0; i < 12; i++) { var o1 = el("option"); o1.value = i; o1.textContent = NN[i] + " mineur"; rootSel.appendChild(o1); }
+  for (i = 0; i < PROGS.length; i++) { var o2 = el("option"); o2.value = i; o2.textContent = PROGS[i].name; progSel.appendChild(o2); }
+
+  function syncControls() {
+    $("bpm").value = bpm; $("bpmv").textContent = bpm;
+    $("sw").value = swing; $("swv").textContent = swing;
+    $("vol").value = vol; rootSel.value = root; progSel.value = prog;
+    $("tg-pad").className = "tg" + (amb.pad ? " on" : "");
+    $("tg-vinyl").className = "tg" + (amb.vinyl ? " on" : "");
+    $("tg-rain").className = "tg" + (amb.rain ? " on" : "");
+    for (var a = 0; a < T; a++) ths[a].className = "th" + (mute[a] ? " muted" : "");
+    repaint();
+  }
+  function setPattern(def) {
+    for (var a = 0; a < T; a++) {
+      for (var b = 0; b < STEPS; b++) pattern[a][b] = 0;
+      var list = def[a] || [];
+      for (var j = 0; j < list.length; j++) {
+        if (a < DRUMS) pattern[a][list[j]] = 1; else pattern[a][list[j][0]] = list[j][1];
+      }
+    }
+  }
+
+  $("play").onclick = function () { if (playing) stop(); else start(); };
+  $("clear").onclick = function () { setPattern([]); repaint(); save(); };
+  $("demo").onclick = function () {
+    setPattern([
+      [0, 7, 10], [4, 12], [0, 2, 4, 6, 8, 10, 12], [14], [12], [15],
+      [[0, 1], [3, 1], [7, 3], [10, 1], [14, 5]],
+      [[2, 4], [5, 3], [8, 5], [10, 4], [13, 2]]
+    ]);
+    bpm = 82; swing = 18; root = 9; prog = 0;
+    amb.pad = true; amb.vinyl = true; amb.rain = false;
+    syncControls(); applyAmb(); save();
+  };
+  $("bpm").oninput = function () { bpm = parseInt(this.value, 10); $("bpmv").textContent = bpm; save(); };
+  $("sw").oninput = function () { swing = parseInt(this.value, 10); $("swv").textContent = swing; save(); };
+  $("vol").oninput = function () { vol = parseInt(this.value, 10); if (master) master.gain.value = vol / 100; save(); };
+  rootSel.onchange = function () { root = parseInt(this.value, 10); repaint(); save(); };
+  progSel.onchange = function () { prog = parseInt(this.value, 10); save(); };
+  function toggle(id, key) {
+    $(id).onclick = function () {
+      amb[key] = !amb[key];
+      this.className = "tg" + (amb[key] ? " on" : "");
+      if (amb[key] && (key === "vinyl" || key === "rain")) initAudio();
+      applyAmb(); save();
+    };
+  }
+  toggle("tg-pad", "pad"); toggle("tg-vinyl", "vinyl"); toggle("tg-rain", "rain");
+
+  syncControls();
+})();
+
+</script>
+</body>
+</html>
